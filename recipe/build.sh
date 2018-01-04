@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ex
+
 # Setup CMake build location
 mkdir build
 cd build
@@ -10,9 +12,33 @@ then
     # Stop Boost from using libquadmath.
     export CXXFLAGS="${CXXFLAGS} -DBOOST_MATH_DISABLE_FLOAT128"
 fi
-cmake -DCPU_ONLY=1 -DBLAS="open" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DCMAKE_INSTALL_LIBDIR=lib -Dpython_version=$PY_VER ..
-make
-make runtest
+
+if [[ ${NOMKL} == 1 ]]; then
+    BLAS=open
+else
+    BLAS=mkl
+fi
+
+if [[ ${ARCH} == 'ppc64le' ]]; then
+    BLAS=open
+fi
+
+cmake -DCPU_ONLY=1                                          \
+      -DBLAS="${BLAS}"                                      \
+      -DCMAKE_INSTALL_PREFIX="${PREFIX}"                    \
+      -DNUMPY_INCLUDE_DIR="${SITE_PKGS}/numpy/core/include" \
+      -DNUMPY_VERSION=${NPY_VER}                            \
+      -DPYTHON_EXECUTABLE="${PREFIX}/bin/python"            \
+      -DBUILD_docs="OFF"                                    \
+      ..
+make -j${CPU_COUNT}
+
+# there's a math error associated with MKL seemingly
+# https://github.com/BVLC/caffe/issues/4083#issuecomment-227046096
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+make -j${CPU_COUNT} runtest
+
 make install
 
 # Python installation is non-standard. So, we're fixing it.
@@ -23,3 +49,8 @@ do
     cp "${PREFIX}/python/${FILENAME}" "${PREFIX}/bin/${FILENAME//.py}"
 done
 rm -rf "${PREFIX}/python/"
+
+if [[ -d "${PREFIX}/lib64" ]]; then
+    mv ${PREFIX}/lib64/* ${PREFIX}/lib/
+    rmdir ${PREFIX}/lib64
+fi
