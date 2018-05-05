@@ -11,8 +11,14 @@ source:
 
 build:
   number: 3
-  skip: True  # [not linux64]
   detect_binary_files_with_prefix: False
+  # conda 4.4+ can use this
+  skip: True  # [blas_impl == 'openblas' and win]
+  requires_features:
+    blas: {{ blas_impl }}
+  # this is for conda 4.3 and below
+  features:
+    - nomkl    # [x86 and blas_impl != 'mkl']
 
 requirements:
   build:
@@ -31,11 +37,11 @@ requirements:
     - libboost
     - libprotobuf
     - lmdb
+    - mkl-devel  {{ mkl }}  # [blas_impl == 'mkl']
+    - openblas-devel {{ openblas }}  # [blas_impl == 'openblas']
     - matplotlib
-    - mkl-devel {{ mkl }}
     - networkx
     - nose
-    - numpy
     - opencv
     - pandas
     - pillow
@@ -47,7 +53,6 @@ requirements:
     - python-leveldb
     - pyyaml
     - scikit-image
-    - scipy
     - six
     - snappy
   run:
@@ -98,8 +103,6 @@ test:
 
     # Test libraries.
     - test -f "${PREFIX}/lib/libcaffe.so"
-
-    - conda inspect linkages -p $PREFIX caffe
 
   imports:
     - caffe

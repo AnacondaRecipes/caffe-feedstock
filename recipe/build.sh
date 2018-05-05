@@ -13,14 +13,10 @@ then
     export CXXFLAGS="${CXXFLAGS} -DBOOST_MATH_DISABLE_FLOAT128"
 fi
 
-if [[ ${NOMKL} == 1 ]]; then
+if [[ ${blas_impl} == openblas ]]; then
     BLAS=open
 else
     BLAS=mkl
-fi
-
-if [[ ${ARCH} == 'ppc64le' ]]; then
-    BLAS=open
 fi
 
 cmake -DCPU_ONLY=1                                          \
