@@ -42,7 +42,8 @@ requirements:
     - matplotlib
     - networkx
     - nose
-    - opencv
+    - py-opencv
+    - libopencv
     - pandas
     - pillow
     - protobuf
