@@ -19,6 +19,11 @@ else
     BLAS=mkl
 fi
 
+# fix issue with linker when using gcc 7.3.0
+if [[ ${target_platform} =~ .*linux.* ]]; then
+    export LDFLAGS="$LDFLAGS -Wl,-rpath-link,$PREFIX/lib"
+fi
+
 cmake -DCPU_ONLY=1                                          \
       -DBLAS="${BLAS}"                                      \
       -DCMAKE_INSTALL_PREFIX="${PREFIX}"                    \
